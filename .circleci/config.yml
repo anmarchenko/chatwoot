@@ -2,6 +2,9 @@ version: 2.1
 orbs:
   node: circleci/node@6.1.0
   qlty-orb: qltysh/qlty-orb@0.0
+  ruby: circleci/ruby@2
+  test-optimization-circleci-orb: datadog/test-optimization-circleci-orb@1
+  continuation: circleci/continuation@0.2.0
 
 # Shared defaults for setup steps
 defaults: &defaults
@@ -113,6 +116,10 @@ jobs:
       - run:
           name: Run DB migrations
           command: bundle exec rails db:chatwoot_prepare
+
+      - test-optimization-circleci-orb/autoinstrument:
+          languages: ruby
+          site: datadoghq.eu
 
       # Run backend tests (parallelized)
       - run:
