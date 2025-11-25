@@ -152,6 +152,9 @@ jobs:
             fi
             printf '{"parallelism": %s}\n' "${desired}" > pipeline-parameters.json
             cat pipeline-parameters.json
+      - continuation/continue:
+          configuration_path: .circleci/test.yml
+          parameters: pipeline-parameters.json
   test:
     <<: *defaults
     parallelism: 8
@@ -288,4 +291,3 @@ workflows:
   build:
     jobs:
       - plan
-      - test
