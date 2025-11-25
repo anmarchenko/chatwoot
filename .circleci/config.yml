@@ -19,137 +19,137 @@ defaults: &defaults
 
 jobs:
   plan:
-      - checkout
-      - node/install:
-          node-version: '23.7'
-      - node/install-pnpm
-      - node/install-packages:
-          pkg-manager: pnpm
-          override-ci-command: pnpm i
+    - checkout
+    - node/install:
+        node-version: '23.7'
+    - node/install-pnpm
+    - node/install-packages:
+        pkg-manager: pnpm
+        override-ci-command: pnpm i
 
-      - run:
-          name: Add PostgreSQL repository and update
-          command: |
-            sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
-            wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
-            sudo apt-get update -y
+    - run:
+        name: Add PostgreSQL repository and update
+        command: |
+          sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+          sudo apt-get update -y
 
-      - run:
-          name: Install System Dependencies
-          command: |
-            sudo apt-get update
-            DEBIAN_FRONTEND=noninteractive sudo apt-get install -y \
-              libpq-dev \
-              redis-server \
-              postgresql-common \
-              postgresql-16 \
-              postgresql-16-pgvector \
-              build-essential \
-              git \
-              curl \
-              libssl-dev \
-              zlib1g-dev \
-              libreadline-dev \
-              libyaml-dev \
-              openjdk-11-jdk \
-              jq \
-              software-properties-common \
-              ca-certificates \
-              imagemagick \
-              libxml2-dev \
-              libxslt1-dev \
-              file \
-              g++ \
-              gcc \
-              autoconf \
-              gnupg2 \
-              patch \
-              ruby-dev \
-              liblzma-dev \
-              libgmp-dev \
-              libncurses5-dev \
-              libffi-dev \
-              libgdbm6 \
-              libgdbm-dev \
-              libvips
+    - run:
+        name: Install System Dependencies
+        command: |
+          sudo apt-get update
+          DEBIAN_FRONTEND=noninteractive sudo apt-get install -y \
+            libpq-dev \
+            redis-server \
+            postgresql-common \
+            postgresql-16 \
+            postgresql-16-pgvector \
+            build-essential \
+            git \
+            curl \
+            libssl-dev \
+            zlib1g-dev \
+            libreadline-dev \
+            libyaml-dev \
+            openjdk-11-jdk \
+            jq \
+            software-properties-common \
+            ca-certificates \
+            imagemagick \
+            libxml2-dev \
+            libxslt1-dev \
+            file \
+            g++ \
+            gcc \
+            autoconf \
+            gnupg2 \
+            patch \
+            ruby-dev \
+            liblzma-dev \
+            libgmp-dev \
+            libncurses5-dev \
+            libffi-dev \
+            libgdbm6 \
+            libgdbm-dev \
+            libvips
 
-      - run:
-          name: Install RVM and Ruby 3.4.4
-          command: |
-            sudo apt-get install -y gpg
-            gpg --keyserver hkp://keyserver.ubuntu.com --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB
-            \curl -sSL https://get.rvm.io | bash -s stable
-            echo 'source ~/.rvm/scripts/rvm' >> $BASH_ENV
-            source ~/.rvm/scripts/rvm
-            rvm install "3.4.4"
-            rvm use 3.4.4 --default
-            gem install bundler -v 2.5.16
+    - run:
+        name: Install RVM and Ruby 3.4.4
+        command: |
+          sudo apt-get install -y gpg
+          gpg --keyserver hkp://keyserver.ubuntu.com --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB
+          \curl -sSL https://get.rvm.io | bash -s stable
+          echo 'source ~/.rvm/scripts/rvm' >> $BASH_ENV
+          source ~/.rvm/scripts/rvm
+          rvm install "3.4.4"
+          rvm use 3.4.4 --default
+          gem install bundler -v 2.5.16
 
-      - run:
-          name: Install Application Dependencies
-          command: |
-            source ~/.rvm/scripts/rvm
-            bundle install
+    - run:
+        name: Install Application Dependencies
+        command: |
+          source ~/.rvm/scripts/rvm
+          bundle install
 
-      # Configure environment and database
-      - run:
-          name: Database Setup and Configure Environment Variables
-          command: |
-            pg_pass=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 15 ; echo '')
-            sed -i "s/REPLACE_WITH_PASSWORD/${pg_pass}/g" ${PWD}/.circleci/setup_chatwoot.sql
-            chmod 644 ${PWD}/.circleci/setup_chatwoot.sql
-            mv ${PWD}/.circleci/setup_chatwoot.sql /tmp/
-            sudo -i -u postgres psql -f /tmp/setup_chatwoot.sql
-            cp .env.example .env
-            sed -i '/^FRONTEND_URL/d' .env
-            sed -i -e '/REDIS_URL/ s/=.*/=redis:\/\/localhost:6379/' .env
-            sed -i -e '/POSTGRES_HOST/ s/=.*/=localhost/' .env
-            sed -i -e '/POSTGRES_USERNAME/ s/=.*/=chatwoot/' .env
-            sed -i -e "/POSTGRES_PASSWORD/ s/=.*/=$pg_pass/" .env
-            echo -en "\nINSTALLATION_ENV=circleci" >> ".env"
+    # Configure environment and database
+    - run:
+        name: Database Setup and Configure Environment Variables
+        command: |
+          pg_pass=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 15 ; echo '')
+          sed -i "s/REPLACE_WITH_PASSWORD/${pg_pass}/g" ${PWD}/.circleci/setup_chatwoot.sql
+          chmod 644 ${PWD}/.circleci/setup_chatwoot.sql
+          mv ${PWD}/.circleci/setup_chatwoot.sql /tmp/
+          sudo -i -u postgres psql -f /tmp/setup_chatwoot.sql
+          cp .env.example .env
+          sed -i '/^FRONTEND_URL/d' .env
+          sed -i -e '/REDIS_URL/ s/=.*/=redis:\/\/localhost:6379/' .env
+          sed -i -e '/POSTGRES_HOST/ s/=.*/=localhost/' .env
+          sed -i -e '/POSTGRES_USERNAME/ s/=.*/=chatwoot/' .env
+          sed -i -e "/POSTGRES_PASSWORD/ s/=.*/=$pg_pass/" .env
+          echo -en "\nINSTALLATION_ENV=circleci" >> ".env"
 
-      # Database setup
-      - run:
-          name: Run DB migrations
-          command: bundle exec rails db:chatwoot_prepare
+    # Database setup
+    - run:
+        name: Run DB migrations
+        command: bundle exec rails db:chatwoot_prepare
 
-      - test-optimization-circleci-orb/autoinstrument:
-          languages: ruby
-          site: datadoghq.eu
-      - run:
-          name: Download ddtest latest release
-          command: |
-            set -euo pipefail
-            mkdir -p bin
-            curl -fsSL https://github.com/DataDog/ddtest/releases/latest/download/ddtest-linux-amd64 -o bin/ddtest
-            chmod +x bin/ddtest
-      - run:
-          name: Plan tests with ddtest
-          command: ./bin/ddtest plan --platform ruby --framework rspec
-          environment:
-            DD_TEST_OPTIMIZATION_RUNNER_MIN_PARALLELISM: 1
-            DD_TEST_OPTIMIZATION_RUNNER_MAX_PARALLELISM: 8
-      - save_cache:
-          key: ddtest-plan-{{ .Revision }}
-          paths:
-            - .testoptimization
-            - bin/ddtest
-      - run:
-          name: Determine parallelism
-          command: |
-            set -euo pipefail
-            cat .testoptimization/parallel-runners.txt
-            desired=$(cat .testoptimization/parallel-runners.txt 2>/dev/null || echo 1)
-            if ! echo "${desired}" | grep -Eq '^[0-9]+$'; then
-              echo "Invalid parallelism value '${desired}', defaulting to 1"
-              desired=1
-            fi
-            if [ "${desired}" -lt 1 ]; then
-              echo "Parallelism must be at least 1, defaulting to 1"
-              desired=1
-            fi
-            printf '{"parallelism": %s}\n' "${desired}" > pipeline-parameters.json
-            cat pipeline-parameters.json
+    - test-optimization-circleci-orb/autoinstrument:
+        languages: ruby
+        site: datadoghq.eu
+    - run:
+        name: Download ddtest latest release
+        command: |
+          set -euo pipefail
+          mkdir -p bin
+          curl -fsSL https://github.com/DataDog/ddtest/releases/latest/download/ddtest-linux-amd64 -o bin/ddtest
+          chmod +x bin/ddtest
+    - run:
+        name: Plan tests with ddtest
+        command: ./bin/ddtest plan --platform ruby --framework rspec
+        environment:
+          DD_TEST_OPTIMIZATION_RUNNER_MIN_PARALLELISM: 1
+          DD_TEST_OPTIMIZATION_RUNNER_MAX_PARALLELISM: 8
+    - save_cache:
+        key: ddtest-plan-{{ .Revision }}
+        paths:
+          - .testoptimization
+          - bin/ddtest
+    - run:
+        name: Determine parallelism
+        command: |
+          set -euo pipefail
+          cat .testoptimization/parallel-runners.txt
+          desired=$(cat .testoptimization/parallel-runners.txt 2>/dev/null || echo 1)
+          if ! echo "${desired}" | grep -Eq '^[0-9]+$'; then
+            echo "Invalid parallelism value '${desired}', defaulting to 1"
+            desired=1
+          fi
+          if [ "${desired}" -lt 1 ]; then
+            echo "Parallelism must be at least 1, defaulting to 1"
+            desired=1
+          fi
+          printf '{"parallelism": %s}\n' "${desired}" > pipeline-parameters.json
+          cat pipeline-parameters.json
   test:
     <<: *defaults
     parallelism: 8
@@ -285,4 +285,5 @@ workflows:
   version: 2
   build:
     jobs:
+      - plan
       - test
