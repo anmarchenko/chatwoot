@@ -1,4 +1,5 @@
 version: 2.1
+setup: true
 orbs:
   node: circleci/node@6.1.0
   qlty-orb: qltysh/qlty-orb@0.0
